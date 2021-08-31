@@ -28,6 +28,7 @@ global $product;
 	do_action( 'woocommerce_after_add_to_cart_quantity' );
 	?>
 
+	<h1>hello testing auto deploy</h1>
 	<button type="submit" id="btnBuyNow" class="single_add_to_cart_button button alt">Buy Now</button>
 
 
