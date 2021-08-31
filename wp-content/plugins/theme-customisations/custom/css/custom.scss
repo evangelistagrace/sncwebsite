@@ -1,0 +1,74 @@
+@import 'colors';
+
+.text-success {
+    color: $success-color;
+}
+.btn-outline-success {
+    border-color: $success-color;
+    &:hover {
+        background-color: $success-color;
+    }
+}
+
+.btn-primary, a.btn-primary {
+    background-color: $success-color !important;
+    font-family: 'Open Sans', sans-serif;
+    &:hover, a.btn-primary:active, a.btn-primary:visited {
+        background-color: darken($success-color, 10%) !important;
+    }
+}
+
+a.btn-primary:active {
+    background-color: darken($success-color, 10%) !important;
+}
+
+.bg-dark {
+    background-color: lighten($success-color, 5%) !important;
+}
+
+// .btn {
+//     font-family: 'Josefin Sans', sans-serif;
+//         // text-transform: uppercase;
+// }
+
+// custom
+.nav-link {
+    font-family: 'Josefin Sans', sans-serif;
+    text-transform: uppercase;
+}
+
+.text-primary, .nav-link {
+    color: $success-color !important;
+}
+
+.text-dark, .nav-link.active {
+    color: darken($success-color, 20%) !important;
+}
+
+.card-footer {
+    padding: .5rem 1rem 1rem 1rem;
+    background-color: #fff !important;
+    border-top: none !important;
+}
+
+.btn-outline-primary {
+    color: $success-color !important;
+    border: 2px solid $success-color !important;
+    // font-family: 'Open Sans', sans-serif;
+
+    &:hover {
+        background-color: $success-color;
+        color: white;
+    }
+}
+
+.btn-outline-light, a.btn-outline-light {
+    border: 2px solid white !important;
+    color: white !important;
+
+    &:hover {
+        color: darken($success-color, 10%) !important;
+    }
+}
+
+/* custom */
