@@ -590,6 +590,14 @@ header.woocommerce-products-header, header.entry-header {
     font-weight: 800;
 }
 
+#payment .place-order .button {
+    text-align: center;
+}
+
+.wc_payment_methods.payment_methods.methods {
+    display: none;
+}
+
 
 
 /* style */

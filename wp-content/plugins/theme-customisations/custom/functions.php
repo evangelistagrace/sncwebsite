@@ -215,60 +215,198 @@ function woo_remove_product_tabs( $tabs ) {
     return $tabs;
 }
 
-// define the woocommerce_single_product_summary callback function
-function custom_single_product_summary () { 
-    echo '<button class="btn btn-primary btn-lg"><i class="fab fa-whatsapp"></i> Chat</button>';
-};    
+ // custom checkout script
+ function custom_checkout_script() { ?>
+	<script>
+		let orders = [],
+			i = 0;
+
+	</script>
 
 
-// change redirect link for add to cart button in single prodcut page
-// function redirect_after_add_to_cart( $url ) {
-//     // return esc_url( get_permalink( get_page_by_title( 'Your Page Title' ) ) );
-// 	return 'https://njengah.com/replace-add-to-cart-button-link-woocommerce/';
+ <?php
+	// get order details from cart item
+	foreach ( WC()->cart->get_cart() as $cart_item ) {
+		$product = $cart_item['data'];
+		$product_cat = wc_get_product_category_list( $cart_item['product_id'] );
+		if(!empty($product)){
+			$product_id = $product->get_id();
+			$product_sku =  $product->get_sku();
+			$array = $product->get_categories();
+			echo $array;
+			?>
+			<script>
+				orders[i] = {}
+				let prod_id = <?php echo json_encode($product_id); ?>,
+					prod_sku = <?php echo json_encode($product_sku); ?>,
+					prod_name = <?php echo json_encode($product->get_name()); ?>,
+					prod_price = <?php echo json_encode($product->get_price()); ?>,
+					myrCurrency = new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }),
+					prod_cat = <?php echo json_encode($product_cat); ?>,
+					parser = new DOMParser();
 
-// }
-// add_filter( 'woocommerce_add_to_cart_redirect', 'redirect_after_add_to_cart', 99 );
+				orders[i].model = prod_name;
+				orders[i].slug = prod_sku.toLowerCase().split(' ').join('-');
+				orders[i].price = myrCurrency.format(prod_price);
+				orders[i].cat = prod_cat.match(/([A-Z])\w+/g);
 
+				if (orders[i].cat.includes('Used')) { 
+					orders[i].condition = 'Used';
+				} else {
+					orders[i].condition = 'New';
+				}
+				
+			</script>
+	<?php
+		}
+	}
 
-/**
- * Add a custom product data tab
- */
-// add_filter( 'woocommerce_product_tabs', 'woo_new_product_tab' );
-// function woo_new_product_tab( $tabs ) {
-	
-// 	// Adds the new tab
-	
-// 	$tabs['test_tab'] = array(
-// 		'title' 	=> __( 'New Product Tab', 'woocommerce' ),
-// 		'priority' 	=> 50,
-// 		'callback' 	=> 'woo_new_product_tab_content'
-// 	);
+	?>
 
-// 	return $tabs;
+    <script type="text/javascript">
 
-// }
-// function woo_new_product_tab_content() {
+        jQuery(document).on( "updated_checkout", function() {
+			let redirect_phone_num = '60189686774',
+				redirect_link = `https://api.whatsapp.com/send?phone=60189686774&text=*`
+			
+			const base_url = 'https://syah-co.local',
+				ws_checkout_btn = document.getElementById('whatsapp_checkout'),
+				product_url = window.location,
+				name_label = 'Name',
+				address_label = 'Address',
+				phone_label = 'Phone',
+				email_label = 'Email',
+				model_label = 'Phone Model',
+				storage_label = 'Storage',
+				condition_label = 'Condition',
+				phone_price_label = 'Phone Price',
+				postage_fee_label = 'Postage Fee',
+				total_label = 'Total',
+				link_label = 'Link'
+			
 
-// 	// The new tab content
+				ws_checkout_btn.addEventListener('click', () => {
+					let customer = {},
+						cart_items = document.querySelectorAll('.cart_item'),
+						shipping_method;
 
-// 	echo '<h2>New Product Tab</h2>';
-// 	echo '<p>Here\'s your new product tab.</p>';
-	
-// }
+					// get customer details	
+					customer.first_name = document.getElementById('billing_first_name').value,
+					customer.last_name = document.getElementById('billing_last_name').value,
+					customer.address_1 = document.getElementById('billing_address_1').value,
+					customer.address_2 = document.getElementById('billing_address_2').value,
+					customer.city = document.getElementById('billing_city').value,
+					customer.state = document.getElementById('billing_state').value, //translate value
+					customer.postcode = document.getElementById('billing_postcode').value,
+					customer.phone = document.getElementById('billing_phone').value,
+					customer.email = document.getElementById('billing_email').value
 
-/**
- * Reorder product data tabs
- */
-// add_filter( 'woocommerce_product_tabs', 'woo_reorder_tabs', 98 );
-// function woo_reorder_tabs( $tabs ) {
+					console.log(customer)
 
-// 	$tabs['description']['priority'] = 10;			// Description second
-// 	$tabs['additional_information']['priority'] = 15;	// Additional information third
+					cart_items = Array.from(cart_items)
 
-// 	// if (in_array('specifications', $tabs)) {
-// 	// 	$tabs['specifications']['priority'] = 5;	
-// 	// }
-	
+					// get order details from order review table
+					/*
+						order properties => model, slug, price, cat, condition, quantity, storage
 
-// 	return $tabs;
-// }
+					*/
+					jQuery.each(cart_items, function(i, item) {
+						var quantity = item.querySelector('.product-name .product-quantity').innerText.match(/\b([0-9]|[1-9][0-9])\b/g)
+
+						if (quantity.length >= 1) {
+							orders[i].quantity = quantity[0]
+						}
+
+						orders[i].storage = document.querySelector('dd.variation-Storage p').innerText
+						console.log(orders[i])
+					})
+
+					// combine details
+					shipping_method = document.getElementById('shipping_method').querySelector('li input[checked="checked"]').nextSibling.innerText;
+
+					// message template
+					redirect_link += `(${shipping_method})%20Syah%26Co.%20Customer%20Detail*%0A%0AP%E2%AD%95STAGE%20Detail%20%3A%0A`;
+
+					// add customer details
+					// name
+					redirect_link += `%0A${name_label}%3A%20${customer.first_name}%20${customer.last_name}`
+					// address
+					if (shipping_method == 'Postage' || shipping_method == 'Cash on Delivery') {
+						
+						redirect_link += `%0A${address_label}%3A%20${customer.address_1}`
+						if (customer.address_2 != '') {
+							redirect_link += `%0A${customer.address_2}`
+						}
+						redirect_link += `%0A${customer.postcode}%20${customer.city}%0A${customer.state}`
+					}
+					// phone
+					redirect_link += `%0A${phone_label}%3A%20${customer.phone}`
+					// email
+					redirect_link += `%0A${email_label}%3A%20${customer.email}`
+
+					// add order details
+					orders.forEach(order => {
+						// model
+						redirect_link += `%0A%0A${model_label}%3A%20${order.model}`
+						// storage
+						redirect_link += `%0A${storage_label}%3A%20${order.storage}`
+						// condition
+						redirect_link += `%0A${condition_label}%3A%20${order.condition}`
+						// link
+						let prod_url = `${base_url}/product/${order.slug}`
+						redirect_link += `%0A${link_label}%3A%20${prod_url}`
+
+						// phone price
+						redirect_link += `%0A%0A${phone_price_label}%3A%20${order.price}`
+					}) 
+
+					if (shipping_method == 'Postage') {
+						redirect_link += `%0A${postage_fee_label}%3A%20`
+					}
+
+					redirect_link += `%0A%0A${total_label}%3A%20`
+
+					// send order message to whatsapp
+					let win = window.open(redirect_link)
+
+					// redirect and clear cart
+					window.location.href = `${base_url}?clear-cart`
+					
+				})
+            });         
+
+    </script>
+
+<?php       
+}
+add_action( 'woocommerce_after_checkout_form', 'custom_checkout_script' );
+
+// clear cart action
+function woocommerce_clear_cart_url() {
+    if ( isset( $_GET['clear-cart'] ) ) {
+        global $woocommerce;
+        $woocommerce->cart->empty_cart();
+    }
+}
+
+add_action( 'init', 'woocommerce_clear_cart_url' );
+
+// Add custom field to the checkout page
+function custom_checkout_field($checkout) {
+	echo '<div id="custom_checkout_field"><h2>' . __('New Heading') . '</h2>';
+	woocommerce_form_field('custom_field_name', array(
+		'type' => 'text',
+		'class' => array(
+		'my-field-class form-row-wide'
+	) ,
+
+	'label' => __('Custom Additional Field') ,
+	'placeholder' => __('New Custom Field') ,
+	) ,
+
+	$checkout->get_value('custom_field_name'));
+	echo '</div>';
+}
+// uncomment this if wanna add custom field
+// add_action('woocommerce_after_order_notes', 'custom_checkout_field');
+

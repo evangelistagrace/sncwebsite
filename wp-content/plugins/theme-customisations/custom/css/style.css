@@ -564,5 +564,13 @@ header.woocommerce-products-header h1, header.entry-header h1 {
   font-weight: 800;
 }
 
+#payment .place-order .button {
+  text-align: center;
+}
+
+.wc_payment_methods.payment_methods.methods {
+  display: none;
+}
+
 /* style */
 /*# sourceMappingURL=style.css.map */
