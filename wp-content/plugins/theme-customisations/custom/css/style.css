@@ -568,5 +568,37 @@ header.woocommerce-products-header h1, header.entry-header h1 {
   text-align: center;
 }
 
+.woocommerce-products-header.mobile {
+  display: none;
+}
+
+@media (min-width: 320px) and (max-width: 480px) {
+  .wp-block-jetpack-slideshow.alignfull, .benefits-bar {
+    display: none;
+  }
+  .woocommerce-products-header.mobile {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    height: 180px;
+    color: white;
+    font-size: .5rem;
+    text-align: center;
+    margin-bottom: 0 !important;
+  }
+  .home.page:not(.page-template-template-homepage) .site-header {
+    margin-bottom: 0;
+  }
+  .row--shop-by-category, .row--latest-arrival {
+    padding: 1rem;
+    width: auto;
+    position: relative;
+    left: auto;
+  }
+  h2.has-text-align-center {
+    font-size: 1.8rem;
+  }
+}
+
 /* style */
 /*# sourceMappingURL=style.css.map */
