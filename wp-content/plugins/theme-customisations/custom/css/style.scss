@@ -632,6 +632,20 @@ header.woocommerce-products-header, header.entry-header {
     h2.has-text-align-center {
         font-size: 1.8rem;
     }
+
+    .row--footer {
+        margin: 0;
+        text-align: center;
+        padding: 2rem 1rem;
+        .col-md-5 {
+            img {
+                margin: auto;
+            }
+        }
+        .footer--col-title {
+            margin: 1rem 0 0.5rem 0;
+        }
+    }
 }
 
 
