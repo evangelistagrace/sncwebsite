@@ -219,7 +219,27 @@ function woo_remove_product_tabs( $tabs ) {
  function custom_checkout_script() { ?>
 	<script>
 		let orders = [],
-			i = 0;
+			i = 0,
+			prod_id,
+			prod_sku,
+			prod_name,
+			prod_price,
+			myrCurrency = new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }),
+			prod_cat,
+			parser = new DOMParser();
+			// validationDoneYet = new Promise((resolve, reject) => {
+			// jQuery(document.body).on('checkout_error', function() {
+			// 	var errors = Array.from(document.querySelectorAll('.woocommerce-error li'));
+			// 	var error_count = errors.length;
+				
+			// 	console.log('error count: ', error_count)
+			// 	if (error_count == 0) {
+			// 		resolve('no validation errors')
+			// 	} else {
+			// 		reject(error_count)
+			// 	}
+			// });
+		// });
 
 	</script>
 
@@ -232,29 +252,27 @@ function woo_remove_product_tabs( $tabs ) {
 		if(!empty($product)){
 			$product_id = $product->get_id();
 			$product_sku =  $product->get_sku();
-			$array = $product->get_categories();
-			echo $array;
 			?>
 			<script>
-				orders[i] = {}
-				let prod_id = <?php echo json_encode($product_id); ?>,
-					prod_sku = <?php echo json_encode($product_sku); ?>,
-					prod_name = <?php echo json_encode($product->get_name()); ?>,
-					prod_price = <?php echo json_encode($product->get_price()); ?>,
-					myrCurrency = new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }),
-					prod_cat = <?php echo json_encode($product_cat); ?>,
-					parser = new DOMParser();
+				orders[i] = {};
+				prod_id = <?php echo json_encode($product_id); ?>;
+				prod_sku = <?php echo json_encode($product_sku); ?>;
+				prod_name = <?php echo json_encode($product->get_name()); ?>;
+				prod_price = <?php echo json_encode($product->get_price()); ?>;
+				prod_cat = <?php echo json_encode($product_cat); ?>;
 
 				orders[i].model = prod_name;
 				orders[i].slug = prod_sku.toLowerCase().split(' ').join('-');
 				orders[i].price = myrCurrency.format(prod_price);
 				orders[i].cat = prod_cat.match(/([A-Z])\w+/g);
 
-				if (orders[i].cat.includes('Used')) { 
-					orders[i].condition = 'Used';
-				} else {
+				if (orders[i].cat.includes('New')) { 
 					orders[i].condition = 'New';
+				} else {
+					orders[i].condition = 'Second Hand';
 				}
+
+				i++;
 				
 			</script>
 	<?php
@@ -264,122 +282,326 @@ function woo_remove_product_tabs( $tabs ) {
 	?>
 
     <script type="text/javascript">
-
-        jQuery(document).on( "updated_checkout", function() {
-			let redirect_phone_num = '60189686774',
-				redirect_link = `https://api.whatsapp.com/send?phone=60189686774&text=*`
+		let redirect_phone_num = '60189686774',
+			redirect_link = `https://api.whatsapp.com/send?phone=60189686774&text=*`,
+			quantity,
+			storage,
+			color,
+			shipping_method,
+			ws_checkout_btn,
+			shipping_options,
+			cod_datepicker,
+			cod_timepicker,
+			sp_datepicker,
+			sp_timepicker
 			
-			const base_url = 'https://syah-co.local',
-				ws_checkout_btn = document.getElementById('whatsapp_checkout'),
-				product_url = window.location,
-				name_label = 'Name',
-				address_label = 'Address',
-				phone_label = 'Phone',
-				email_label = 'Email',
-				model_label = 'Phone Model',
-				storage_label = 'Storage',
-				condition_label = 'Condition',
-				phone_price_label = 'Phone Price',
-				postage_fee_label = 'Postage Fee',
-				total_label = 'Total',
-				link_label = 'Link'
+		const base_url = 'https://syah-co.local',
+			product_url = window.location,
+			// labels
+			name_label = 'Name',
+			address_label = 'Address',
+			phone_label = 'Phone',
+			email_label = 'Email',
+			comments_label = 'Order Comments',
+			model_label = 'Model',
+			storage_label = 'Storage',
+			color_label = 'Color',
+			condition_label = 'Condition',
+			phone_price_label = 'Price',
+			postage_fee_label = 'Postage Fee',
+			cod_date_label = 'COD Date',
+			cod_time_label = 'COD Time',
+			sp_date_label = 'Pick-up Date',
+			sp_time_label = 'Pick-up Time',
+			sp_location_label = 'Pick-up Location',
+			cod_fee_label = 'COD Fee',
+			total_label = 'Total',
+			link_label = 'Link'
 			
 
-				ws_checkout_btn.addEventListener('click', () => {
-					let customer = {},
-						cart_items = document.querySelectorAll('.cart_item'),
-						shipping_method;
+        jQuery(document).on( "updated_checkout", function($) {
+			
+			ws_checkout_btn = document.getElementById('whatsapp_checkout')
+			shipping_options = document.querySelectorAll('input[name="shipping_method[0]"]')
+			cod_datepicker = document.getElementById('cod_datepicker_wrapper')
+			cod_timepicker = document.getElementById('cod_timepicker_wrapper')
+			sp_datepicker = document.getElementById('sp_datepicker_wrapper')
+			sp_timepicker = document.getElementById('sp_timepicker_wrapper')
 
-					// get customer details	
-					customer.first_name = document.getElementById('billing_first_name').value,
-					customer.last_name = document.getElementById('billing_last_name').value,
-					customer.address_1 = document.getElementById('billing_address_1').value,
-					customer.address_2 = document.getElementById('billing_address_2').value,
-					customer.city = document.getElementById('billing_city').value,
-					customer.state = document.getElementById('billing_state').value, //translate value
-					customer.postcode = document.getElementById('billing_postcode').value,
-					customer.phone = document.getElementById('billing_phone').value,
-					customer.email = document.getElementById('billing_email').value
+			// add/remove form fields on shipping method selection
+			Array.from(shipping_options).forEach(option => {
+				if (option.checked) {
+					switch (option.value) {
+						case 'local_pickup:3':
+							shipping_method = 'Self-pickup'
+							console.log(shipping_method)
+							if (cod_datepicker !== null && cod_timepicker !== null) {
+								cod_datepicker.style.display = 'none'
+								cod_timepicker.style.display = 'none'
+							}
+							if (sp_datepicker !== null && sp_timepicker !== null) {
+								sp_datepicker.style.display = 'block'
+								sp_timepicker.style.display = 'block'
+							}
+							break
+						case 'local_pickup:5':
+							shipping_method = 'Cash on Delivery'
+							console.log(shipping_method)
+							if (cod_datepicker !== null && cod_timepicker !== null) {
+								cod_datepicker.style.display = 'block'
+								cod_timepicker.style.display = 'block'
+							}
+							if (sp_datepicker !== null && sp_timepicker !== null) {
+								sp_datepicker.style.display = 'none'
+								sp_timepicker.style.display = 'none'
+							}
+							break
+						case 'local_pickup:6':
+							shipping_method = 'Postage'
+							console.log(shipping_method)
+							if (cod_datepicker !== null && cod_timepicker !== null) {
+								cod_datepicker.style.display = 'none'
+								cod_timepicker.style.display = 'none'
+							}
+							if (sp_datepicker !== null && sp_timepicker !== null) {
+								sp_datepicker.style.display = 'none'
+								sp_timepicker.style.display = 'none'
+							}
+							break
+					} 
+				}
+			})
+		
 
-					console.log(customer)
-
-					cart_items = Array.from(cart_items)
-
-					// get order details from order review table
-					/*
-						order properties => model, slug, price, cat, condition, quantity, storage
-
-					*/
-					jQuery.each(cart_items, function(i, item) {
-						var quantity = item.querySelector('.product-name .product-quantity').innerText.match(/\b([0-9]|[1-9][0-9])\b/g)
-
-						if (quantity.length >= 1) {
-							orders[i].quantity = quantity[0]
-						}
-
-						orders[i].storage = document.querySelector('dd.variation-Storage p').innerText
-						console.log(orders[i])
-					})
-
-					// combine details
-					shipping_method = document.getElementById('shipping_method').querySelector('li input[checked="checked"]').nextSibling.innerText;
-
-					// message template
-					redirect_link += `(${shipping_method})%20Syah%26Co.%20Customer%20Detail*%0A%0AP%E2%AD%95STAGE%20Detail%20%3A%0A`;
-
-					// add customer details
-					// name
-					redirect_link += `%0A${name_label}%3A%20${customer.first_name}%20${customer.last_name}`
-					// address
-					if (shipping_method == 'Postage' || shipping_method == 'Cash on Delivery') {
+			// whatsapp checkout
+			ws_checkout_btn.addEventListener('click', () => {
+				// let validationDoneYet;
+				// trigger click on WC place order button to force form validation and display order checkout later
+				ws_checkout();
+				jQuery('#place_order').click();
+				// jQuery('#place_order').on('click', function() {
+				// 	validationDoneYet = new Promise((resolve, reject) => {
+				// 	jQuery(document.body).on('checkout_error', function() {
+				// 		var errors = Array.from(document.querySelectorAll('.woocommerce-error li'));
+				// 		var error_count = errors.length;
 						
-						redirect_link += `%0A${address_label}%3A%20${customer.address_1}`
-						if (customer.address_2 != '') {
-							redirect_link += `%0A${customer.address_2}`
-						}
-						redirect_link += `%0A${customer.postcode}%20${customer.city}%0A${customer.state}`
-					}
-					// phone
-					redirect_link += `%0A${phone_label}%3A%20${customer.phone}`
-					// email
-					redirect_link += `%0A${email_label}%3A%20${customer.email}`
+				// 		console.log('error count: ', error_count)
+				// 		if (error_count == 0) {
+				// 			resolve('no validation errors')
+				// 		} else {
+				// 			reject(error_count)
+				// 		}
+				// 	});
+				// })
+				// })
 
-					// add order details
-					orders.forEach(order => {
-						// model
-						redirect_link += `%0A%0A${model_label}%3A%20${order.model}`
-						// storage
-						redirect_link += `%0A${storage_label}%3A%20${order.storage}`
-						// condition
-						redirect_link += `%0A${condition_label}%3A%20${order.condition}`
-						// link
-						let prod_url = `${base_url}/product/${order.slug}`
-						redirect_link += `%0A${link_label}%3A%20${prod_url}`
+				// jQuery('form.woocommerce-checkout').on('submit', function(e) {
+				// 	e.preventDefault();
 
-						// phone price
-						redirect_link += `%0A%0A${phone_price_label}%3A%20${order.price}`
-					}) 
+		
+				// 	// wait fr form validation
+				// 	validationDoneYet
+				// 		.then(ok => {
+				// 			console.log(ok)
+				// 		})
+				// 		.catch(err => {
+							
+				// 			if (err > 1) {
+				// 				console.log('There are other errors')
+				// 				remove_fake_error()
+								
+				// 			} else {
+				// 				console.log('all good')
 
-					if (shipping_method == 'Postage') {
-						redirect_link += `%0A${postage_fee_label}%3A%20`
-					}
+				// 				let fake_err = document.querySelector('.woocommerce-error')
+				// 				fake_err.style.display = 'none'
+				// 				ws_checkout()
+				// 			}
+							
+				// 		})
+				// })
+				
+			})
 
-					redirect_link += `%0A%0A${total_label}%3A%20`
+			
+		// function remove_fake_error() {
+		// 	Array.from(document.querySelectorAll('.woocommerce-error li')).forEach(li => {
+		// 		var error_text = li.innerText;
+		// 		if (error_text == 'custom_notice'){
+		// 			li.style.display = 'none'
+		// 		}
+		// 	});
+		// }
+		
+		function ws_checkout() {
+			let customer = {},
+					cart_items = document.querySelectorAll('.cart_item')
 
-					// send order message to whatsapp
-					let win = window.open(redirect_link)
+			// get customer details	
+			customer.first_name = document.getElementById('billing_first_name').value;
+			customer.last_name = document.getElementById('billing_last_name').value;
+			customer.address_1 = document.getElementById('billing_address_1').value;
+			customer.address_2 = document.getElementById('billing_address_2').value;
+			customer.city = document.getElementById('billing_city').value;
+			customer.state = document.getElementById('billing_state').value;//translate value
+			customer.postcode = document.getElementById('billing_postcode').value;
+			customer.phone = document.getElementById('billing_phone').value;
+			customer.email = document.getElementById('billing_email').value;
+			customer.comments = document.getElementById('order_comments').value;
 
-					// redirect and clear cart
-					window.location.href = `${base_url}?clear-cart`
+			console.log(customer);
+
+			cart_items = Array.from(cart_items);
+
+			// get order details from order review table
+			/*
+				order properties => model, slug, price, cat, condition, quantity, storage
+
+			*/
+			jQuery.each(cart_items, function(i, item) {
+				quantity = item.querySelector('.product-name .product-quantity').innerText.match(/\b([0-9]|[1-9][0-9])\b/g);
+
+				if (quantity.length >= 1) {
+					orders[i].quantity = quantity[0];
+				}
+
+				storage = item.querySelector('dd.variation-Storage p');
+
+				if (storage !== null) {
+					orders[i].storage = storage.innerText;
+				}
+
+				color = item.querySelector('dd.variation-Color p');
+
+				if (color !== null) {
+					orders[i].color = color.innerText;
+				}
+
+				console.log(orders[i]);
+			})
+
+			// combine details
+			//selected shipping method
+			shipping_method = document.getElementById('shipping_method').querySelector('li input[checked="checked"]').nextSibling.innerText;
+
+			// message template
+			redirect_link += `(${shipping_method})%20Syah%26Co.%20Customer%20Detail*%0A`;
+
+			// add customer details
+			// name
+			redirect_link += `%0A${name_label}%3A%20${customer.first_name}%20${customer.last_name}`
+			// address
+			if (shipping_method == 'Postage' || shipping_method == 'Cash on Delivery') {
+				
+				redirect_link += `%0A${address_label}%3A%20${customer.address_1}`
+				if (customer.address_2 != '') {
+					redirect_link += `%0A${customer.address_2}`
+				}
+				redirect_link += `%0A${customer.postcode}%20${customer.city}%0A${customer.state}`
+			}
+			// phone
+			redirect_link += `%0A${phone_label}%3A%20${customer.phone}`
+			// email
+			redirect_link += `%0A${email_label}%3A%20${customer.email}`
+			// comments
+			redirect_link += customer.comments !== '' ? `%0A${comments_label}%3A%20${customer.comments}` : ''
+
+			// add order details
+			orders.forEach((order, i) => {
+				// model
+				redirect_link += `%0A%0A%5B${++i}%5D%20${model_label}%3A%20${order.model}`
+				// color
+				redirect_link += order.hasOwnProperty('color') ? `%0A${color_label}%3A%20${order.color}` : ''
+				// storage
+				redirect_link += order.hasOwnProperty('storage') ? `%0A${storage_label}%3A%20${order.storage}` : ''
+				// condition
+				redirect_link += `%0A${condition_label}%3A%20${order.condition}`
+				// phone price
+				redirect_link += `%0A${phone_price_label}%3A%20${order.price}`
+				// link
+				let prod_url = `${base_url}/product/${order.slug}`
+				redirect_link += `%0A${link_label}%3A%20${prod_url}`
+			}) 
+
+			// Postage details
+			if (shipping_method == 'Postage') {
+				redirect_link += `%0A%0A${postage_fee_label}%3A%20`
+			}
+
+			// COD details
+			if (shipping_method == 'Cash on Delivery') {
+				customer.cod_date = document.getElementById('cod_datepicker').value
+				customer.cod_time = document.getElementById('cod_timepicker').value
+				
+				redirect_link += `%0A%0A${cod_date_label}%3A%20${customer.cod_date}`
+				redirect_link += `%0A${cod_time_label}%3A%20${customer.cod_time}`
+				redirect_link += `%0A${cod_fee_label}%3A%20`
+			}
+
+			// SP details
+			if (shipping_method == 'Self-pickup') {
+				customer.sp_date = document.getElementById('sp_datepicker').value
+				customer.sp_time = document.getElementById('sp_timepicker').value
+				
+				redirect_link += `%0A%0A${sp_date_label}%3A%20${customer.sp_date}`
+				redirect_link += `%0A${sp_time_label}%3A%20${customer.sp_time}`
+				redirect_link += `%0A${sp_location_label}%3A%20`
+			}
+
+			redirect_link += `%0A%0A${total_label}%3A%20`
+
+			// send order message to whatsapp
+			let win = window.open(redirect_link)
+
+			// redirect and clear cart
+			// window.location.href = `${base_url}?clear-cart`
+		}
+
+			// jQuery('#place_order').on('click', function() {
+			// 	console.log('place rder clicked')
+			// 	// var errors = Array.from(document.querySelectorAll('.woocommerce-error li'));
+			// 	// var error_count = errors.length;
+
+		
+			// 	// wait fr form validation
+			// 	validationDoneYet
+			// 	.then(ok => {
+			// 		console.log(ok)
+			// 	})
+			// 	.catch(err => {
 					
-				})
-            });         
+			// 		if (err > 1) {
+			// 			console.log('There are other errors')
+			// 			remove_fake_error()
+						
+			// 		} else {
+			// 			console.log('all good')
 
+			// 			let fake_err = document.querySelector('.woocommerce-error')
+			// 			fake_err.style.display = 'none'
+			// 			ws_checkout()
+			// 			// jQuery('form.woocommerce-checkout').unbind('submit').submit();
+			// 		}
+					
+			// 	})
+			// })
+
+		}); 
+
+		
+		
     </script>
 
 <?php       
 }
 add_action( 'woocommerce_after_checkout_form', 'custom_checkout_script' );
+
+// custom function to run after checkout form validation
+function custom_func_after_checkout_validation($posted) {
+	wc_add_notice( __( "custom_notice", 'fake_error' ), 'error');
+}
+
+// add_action('woocommerce_after_checkout_validation', 'custom_func_after_checkout_validation');
 
 // clear cart action
 function woocommerce_clear_cart_url() {
@@ -391,22 +613,77 @@ function woocommerce_clear_cart_url() {
 
 add_action( 'init', 'woocommerce_clear_cart_url' );
 
-// Add custom field to the checkout page
-function custom_checkout_field($checkout) {
-	echo '<div id="custom_checkout_field"><h2>' . __('New Heading') . '</h2>';
-	woocommerce_form_field('custom_field_name', array(
-		'type' => 'text',
-		'class' => array(
-		'my-field-class form-row-wide'
-	) ,
+// add custom fields to checkout page
+function custom_datepicker_field($checkout) {
 
-	'label' => __('Custom Additional Field') ,
-	'placeholder' => __('New Custom Field') ,
-	) ,
+	// cod
+	// datepicker section
+    echo '<div id="cod_datepicker_wrapper" style="display:none">';
 
-	$checkout->get_value('custom_field_name'));
-	echo '</div>';
+    woocommerce_form_field('cod_datepicker', array(
+        'type' => 'date',
+        'class'=> array( 'form-row-first cod_datepicker'),
+        'label' => __('COD Date'),
+        'required' => true,
+    ), '' );
+
+    echo '<br clear="all"></div>';
+
+	// timepicker section
+	echo '<div id="cod_timepicker_wrapper" style="display:none">';
+		woocommerce_form_field('cod_timepicker', array(
+			'label'       => __('COD Time', 'woocommerce'),
+			'placeholder' => _x('', 'COD Time', 'woocommerce'),
+			'required'    => true,
+			'clear'       => false,
+			'type'        => 'select',
+			'options'     => array(
+				'9.00a.m - 11.00a.m' => __('9.00a.m - 11.00a.m', 'woocommerce' ),
+				'2.00p.m - 5.00p.m' => __('2.00p.m - 5.00p.m', 'woocommerce' )
+				)
+			), '' 
+		);
+	echo '<br clear="all"></div>';
+
+	// self-pickup
+	// datepicker section
+    echo '<div id="sp_datepicker_wrapper" style="display:none">';
+
+    woocommerce_form_field('sp_datepicker', array(
+        'type' => 'date',
+        'class'=> array( 'form-row-first sp_datepicker'),
+        'label' => __('Self-Pickup Date'),
+        'required' => true,
+    ), '' );
+
+    echo '<br clear="all"></div>';
+
+	// timepicker section
+	echo '<div id="sp_timepicker_wrapper" style="display:none">';
+		woocommerce_form_field('sp_timepicker', array(
+			'label'       => __('Self-Pickup Time', 'woocommerce'),
+			'placeholder' => _x('', 'Self-Pickup Time', 'woocommerce'),
+			'required'    => true,
+			'clear'       => false,
+			'type'        => 'select',
+			'options'     => array(
+				'9.00a.m - 11.00a.m' => __('9.00a.m - 11.00a.m', 'woocommerce' ),
+				'2.00p.m - 5.00p.m' => __('2.00p.m - 5.00p.m', 'woocommerce' )
+				)
+			), '' 
+		);
+	echo '<br clear="all"></div>';
+
+
+
+	$checkout->get_value('cod_datepicker');
+	$checkout->get_value('cod_timepicker');
+
+
+    ?>
+    
+    <?php
 }
 // uncomment this if wanna add custom field
-// add_action('woocommerce_after_order_notes', 'custom_checkout_field');
+add_action('woocommerce_before_order_notes', 'custom_datepicker_field');
 
