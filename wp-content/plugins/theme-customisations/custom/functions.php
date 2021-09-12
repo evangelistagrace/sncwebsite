@@ -60,17 +60,19 @@ function woocommerce_subcategory_thumbnail_override( $category ) {
 add_action( 'init', 'remove_hooks' ); 
 add_action( 'init', 'add_hooks');
 add_action( 'init', 'wpdocs_add_custom_shortcode' );
+// custom menu
+// add_action( 'init', 'wpb_custom_new_menu' );
 
 // remove hooks
 function remove_hooks() {
 	remove_action( 'woocommerce_shop_loop_subcategory_title', 'woocommerce_template_loop_category_title', 10 ); 
 	remove_action( 'woocommerce_before_subcategory_title',  'woocommerce_subcategory_thumbnail',  10 ); 
 	// customize header
-	remove_action( 'storefront_header', 'storefront_site_branding', 20 );
-	remove_action('storefront_header', 'storefront_product_search', 40);
-	remove_action('storefront_header', 'storefront_primary_navigation', 50);
-	remove_action('storefront_header', 'storefront_header_cart', 60);
-	remove_action('storefront_footer', 'storefront_before_footer', 20);
+	// remove_action( 'storefront_header', 'storefront_site_branding', 20 );
+	// remove_action('storefront_header', 'storefront_product_search', 40);
+	// remove_action('storefront_header', 'storefront_primary_navigation', 50);
+	// remove_action('storefront_header', 'storefront_header_cart', 60);
+	// remove_action('storefront_footer', 'storefront_before_footer', 20);
 
 	// remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30);
 
@@ -85,16 +87,19 @@ function add_hooks() {
 	add_action( 'woocommerce_before_subcategory_title',  'woocommerce_subcategory_thumbnail_override',  10 ); 
 	
 	// custom header
-	add_action( 'storefront_header', 'custom_storefront_header_logo', 2 );
-	add_action( 'storefront_header', 'storefront_primary_navigation', 5 );
-	add_action( 'storefront_header', 'storefront_product_search', 7);
+	// add_action( 'storefront_header', 'custom_storefront_header_logo', 2 );
+	// add_action( 'storefront_header', 'storefront_primary_navigation', 5 );
+	// add_action( 'storefront_header', 'storefront_product_search', 7);
 	// add_action( 'storefront_header', 'storefront_header_cart', 10);
 	// add_action( 'storefront_header', 'custom_my_account', 10);
-	add_action( 'storefront_header', 'custom_storefront_header_cart', 12);
+	// add_action( 'storefront_header', 'custom_storefront_header_cart', 12);
 	// add_action( 'woocommerce_single_product_summary', 'custom_single_product_summary', 35 ); 
-
-
 }
+
+function wpb_custom_new_menu() {
+	register_nav_menu('my-custom-menu',__( 'My Custom Menu' ));
+}
+  
 
 function custom_storefront_header_logo() { ?>
 <a class="navbar-title text-success" href="<?php echo site_url(); ?>">Syah&amp;Co.</a>
