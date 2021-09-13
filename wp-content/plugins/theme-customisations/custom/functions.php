@@ -96,6 +96,35 @@ function add_hooks() {
 	// add_action( 'woocommerce_single_product_summary', 'custom_single_product_summary', 35 ); 
 }
 
+// add script for slider for frontpage
+function wpb_hook_javascript() {
+	if (is_page ('13')) { 
+	  ?>
+		<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/js/splide.min.js"></script>
+		<script type="text/javascript">
+			new Splide( '.splide', {
+					type   : 'loop',
+					speed: 200,
+					perPage: 1,
+					autoplay: true
+				} ).mount();
+		</script>
+	  <?php
+	}
+}
+add_action('wp_footer', 'wpb_hook_javascript');
+
+// add stylesheet for slider for frontpage
+function wpb_hook_javascript_header() {
+	if (is_page ('13')) { 
+	  ?>
+		  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css">
+
+	  <?php
+	}
+}
+add_action('wp_head', 'wpb_hook_javascript_header');
+
 function wpb_custom_new_menu() {
 	register_nav_menu('my-custom-menu',__( 'My Custom Menu' ));
 }

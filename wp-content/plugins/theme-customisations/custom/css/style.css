@@ -415,6 +415,19 @@ ul.tabs.wc-tabs li a:hover {
   text-align: center;
 }
 
+#splide01 {
+  width: 100vw;
+  position: relative;
+  left: calc(-50vw + 50%);
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  margin-bottom: 7rem;
+}
+
 main#main {
   position: relative;
 }
@@ -506,6 +519,20 @@ header.woocommerce-products-header h1, header.entry-header h1 {
   .row--footer .footer--col-title {
     margin: 1rem 0 0.5rem 0;
   }
+  #splide01 {
+    margin-bottom: 0;
+  }
+}
+
+.benefits-bar {
+  margin-top: 0;
+  position: absolute;
+  bottom: -152px;
+  width: 1053px;
+}
+
+.home.page:not(.page-template-template-homepage) .site-header {
+  margin-bottom: 0;
 }
 
 /* style */
