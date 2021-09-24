@@ -535,5 +535,9 @@ header.woocommerce-products-header h1, header.entry-header h1 {
   margin-bottom: 0;
 }
 
+.splide__slide img {
+  width: 100vw;
+}
+
 /* style */
 /*# sourceMappingURL=style.css.map */
